@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Data Table</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Interactive Data Table</h1>
+        <div class="controls">
+            <input type="text" id="search-input" placeholder="Filter rows...">
+            <select id="id-filter">
+                <option value="all">All IDs</option>
+                <option value="1-5">1-5</option>
+                <option value="6-10">6-10</option>
+                <option value="11-15">11-15</option>
+            </select>
+        </div>
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th data-column="id" data-order="desc">ID</th>
+                    <th data-column="name" data-order="desc">Name</th>
+                    <th data-column="age" data-order="desc">Age</th>
+                    <th data-column="country" data-order="desc">Country</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be populated here by JavaScript -->
+            </tbody>
+        </table>
+        <div id="pagination">
+            <!-- Pagination controls will be populated here by JavaScript -->
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+#search-input, #id-filter {
+    width: 48%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    cursor: pointer;
+}
+
+#pagination {
+    text-align: center;
+}
+
+#pagination button {
+    padding: 10px 20px;
+    margin: 0 5px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+#pagination button.active {
+    background-color: #007bff;
+    color: #fff;
+    border-color: #007bff;
+}
+
+</style>
+
+<script>
+   document.addEventListener("DOMContentLoaded", function () {
+    const data = [
+        { id: 1, name: "Alice", age: 25, country: "USA" },
+        { id: 2, name: "Bob", age: 30, country: "UK" },
+        { id: 3, name: "Charlie", age: 28, country: "Canada" },
+        { id: 4, name: "David", age: 22, country: "Australia" },
+        { id: 5, name: "Eve", age: 35, country: "Germany" },
+        { id: 6, name: "Frank", age: 24, country: "France" },
+        { id: 7, name: "Grace", age: 27, country: "Spain" },
+        { id: 8, name: "Hank", age: 32, country: "Italy" },
+        { id: 9, name: "Ivy", age: 29, country: "Netherlands" },
+        { id: 10, name: "Jack", age: 31, country: "Sweden" },
+        { id: 11, name: "Karen", age: 26, country: "Norway" },
+        { id: 12, name: "Leo", age: 33, country: "Denmark" },
+        { id: 13, name: "Mona", age: 21, country: "Belgium" },
+        { id: 14, name: "Nate", age: 34, country: "Finland" },
+        { id: 15, name: "Olivia", age: 23, country: "Switzerland" }
+    ];
+
+    const rowsPerPage = 5;
+    let currentPage = 1;
+    let currentData = [...data];
+
+    const tableBody = document.querySelector("#data-table tbody");
+    const searchInput = document.getElementById("search-input");
+    const idFilter = document.getElementById("id-filter");
+    const pagination = document.getElementById("pagination");
+
+    function renderTable(data) {
+        tableBody.innerHTML = "";
+        data.forEach(item => {
+            const row = `<tr>
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>${item.age}</td>
+                            <td>${item.country}</td>
+                         </tr>`;
+            tableBody.innerHTML += row;
+        });
+    }
+
+    function renderPagination(totalRows, rowsPerPage) {
+        pagination.innerHTML = "";
+        const pageCount = Math.ceil(totalRows / rowsPerPage);
+        for (let i = 1; i <= pageCount; i++) {
+            const button = document.createElement("button");
+            button.innerText = i;
+            button.classList.add("page-btn");
+            if (i === currentPage) button.classList.add("active");
+            button.addEventListener("click", () => {
+                currentPage = i;
+                updateTable();
+            });
+            pagination.appendChild(button);
+        }
+    }
+
+    function filterById(data) {
+        const filterValue = idFilter.value;
+        if (filterValue === "all") {
+            return data;
+        } else {
+            const [min, max] = filterValue.split("-").map(Number);
+            return data.filter(item => item.id >= min && item.id <= max);
+        }
+    }
+
+    function updateTable() {
+        const searchQuery = searchInput.value.toLowerCase();
+        const filteredById = filterById(data);
+        const filteredData = filteredById.filter(item =>
+            Object.values(item).some(value =>
+                value.toString().toLowerCase().includes(searchQuery)
+            )
+        );
+        const start = (currentPage - 1) * rowsPerPage;
+        const paginatedData = filteredData.slice(start, start + rowsPerPage);
+        renderTable(paginatedData);
+        renderPagination(filteredData.length, rowsPerPage);
+    }
+
+    document.querySelectorAll("th[data-column]").forEach(header => {
+        header.addEventListener("click", () => {
+            const column = header.dataset.column;
+            const order = header.dataset.order;
+            header.dataset.order = order === "desc" ? "asc" : "desc";
+            currentData.sort((a, b) => {
+                if (a[column] < b[column]) return order === "asc" ? -1 : 1;
+                if (a[column] > b[column]) return order === "asc" ? 1 : -1;
+                return 0;
+            });
+            updateTable();
+        });
+    });
+
+    searchInput.addEventListener("input", updateTable);
+    idFilter.addEventListener("change", updateTable);
+
+    updateTable();
+});
+
+</script>
